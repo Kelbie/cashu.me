@@ -833,6 +833,15 @@ export const useWalletStore = defineStore("wallet", {
         let amount_paid = amount - proofsStore.sumProofs(data.change);
         useUiStore().vibrate();
         if (!silent) {
+          // Send full transaction details back to the extension popup/page
+          try {
+            const payload = { level: "success", message: JSON.stringify(data) };
+            window.parent?.postMessage(
+              { ext: "cashu", type: "frontendEvent", event: "notify", message: 'Melt', payload, id: Date.now() },
+              "*"
+            );
+          } catch (_) {}
+
           notifySuccess(
             this.t("wallet.notifications.paid_lightning", {
               amount: uIStore.formatCurrency(amount_paid, mintWallet.unit),
@@ -1467,7 +1476,7 @@ export const useWalletStore = defineStore("wallet", {
       const uiStore = useUiStore();
       uiStore.closeDialogs();
     },
-    lnurlPayFirst: async function (address: string) {
+    lnurlPayFirst: async function (address: string, predefinedAmount?: number, predefinedComment?: string) {
       var host;
       var data;
       if (address.split("@").length == 2) {
@@ -1496,18 +1505,23 @@ export const useWalletStore = defineStore("wallet", {
         this.payInvoiceData.lnurlpay.domain = host
           .split("https://")[1]
           .split("/")[0];
-        if (
+
+        // Set predefined amount if provided, otherwise use default logic
+        if (predefinedAmount !== undefined) {
+          this.payInvoiceData.input.amount = predefinedAmount;
+        } else if (
           this.payInvoiceData.lnurlpay.maxSendable ==
           this.payInvoiceData.lnurlpay.minSendable
         ) {
           this.payInvoiceData.input.amount =
             this.payInvoiceData.lnurlpay.maxSendable / 1000;
         }
+
         this.payInvoiceData.invoice = null;
         this.payInvoiceData.input = {
           request: "",
-          amount: null,
-          comment: "",
+          amount: this.payInvoiceData.input.amount,
+          comment: predefinedComment || "",
           quote: "",
         };
         this.payInvoiceData.show = true;
