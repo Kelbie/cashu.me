@@ -840,7 +840,7 @@ export const useWalletStore = defineStore("wallet", {
               { ext: "cashu", type: "frontendEvent", event: "notify", message: 'Melt', payload, id: Date.now() },
               "*"
             );
-          } catch (_) {}
+          } catch (_) { }
 
           notifySuccess(
             this.t("wallet.notifications.paid_lightning", {
