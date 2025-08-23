@@ -833,15 +833,6 @@ export const useWalletStore = defineStore("wallet", {
         let amount_paid = amount - proofsStore.sumProofs(data.change);
         useUiStore().vibrate();
         if (!silent) {
-          // Send full transaction details back to the extension popup/page
-          try {
-            const payload = { level: "success", message: JSON.stringify(data) };
-            window.parent?.postMessage(
-              { ext: "cashu", type: "frontendEvent", event: "notify", message: 'Melt', payload, id: Date.now() },
-              "*"
-            );
-          } catch (_) { }
-
           notifySuccess(
             this.t("wallet.notifications.paid_lightning", {
               amount: uIStore.formatCurrency(amount_paid, mintWallet.unit),
