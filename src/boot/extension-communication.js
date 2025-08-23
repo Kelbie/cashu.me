@@ -1,46 +1,41 @@
-// Enhanced postMessage handler with consistent API design
-export default function () {
-  // Status constants for clear, descriptive responses
-  const STATUS = {
-    SUCCESS: "success",
-    ERROR: "error",
-    PENDING: "pending",
-    CANCELLED: "cancelled",
+// Status constants for clear, descriptive responses
+const STATUS = {
+  SUCCESS: "success",
+  ERROR: "error",
+  PENDING: "pending",
+  CANCELLED: "cancelled",
+};
+
+// Helper function to send standardized responses
+function sendResponse({
+  originalEvent,
+  action,
+  status,
+  payload = null,
+  error = null,
+}) {
+  const response = {
+    ext: "cashu",
+    type: "cashu.response",
+    action: action,
+    status: status,
+    id: originalEvent.data.id,
+    timestamp: Date.now(),
+    payload: payload,
   };
 
-  // Helper function to send standardized responses
-  function sendResponse(
-    originalEvent,
-    action,
-    status,
-    payload = null,
-    error = null
-  ) {
-    const response = {
-      ext: "cashu",
-      type: "cashu.response",
-      action: action,
-      status: status,
-      id: originalEvent.data.id,
-      timestamp: Date.now(),
+  // Always include error if provided, regardless of status
+  if (error) {
+    response.error = {
+      message: error.message || error,
+      code: error.code || "UNKNOWN_ERROR",
     };
-
-    // Always include payload if provided, regardless of status
-    if (payload) {
-      response.payload = payload;
-    }
-
-    // Always include error if provided, regardless of status
-    if (error) {
-      response.error = {
-        message: error.message || error,
-        code: error.code || "UNKNOWN_ERROR",
-      };
-    }
-
-    window.parent.postMessage(response, "*");
   }
 
+  window.parent.postMessage(response, originalEvent.origin);
+}
+
+export default function () {
   // Listen for postMessages from browser extension
   addEventListener("message", async (event) => {
     // Validate message structure
@@ -50,17 +45,11 @@ export default function () {
 
     switch (event.data.ext) {
       case "cashu":
-        switch (event.data.type) {
-          case "lnpay":
-            try {
-              sendResponse(event, "cashu.dialog.opened", STATUS.PENDING, {
-                message: "Token dialog is open",
-                token: event.data.params.token,
-                status: "ready_for_claim",
-              });
-              const { useWalletStore } = await import("src/stores/wallet");
-              const walletStore = useWalletStore();
-
+        try {
+          const { useWalletStore } = await import("src/stores/wallet");
+          const walletStore = useWalletStore();
+          switch (event.data.type) {
+            case "lnpay":
               const { amount, comment, addrOrLnurl } = event.data.params;
 
               const result = await walletStore.lnurlPayFirst(
@@ -69,21 +58,19 @@ export default function () {
                 comment
               );
 
-              sendResponse(event, "cashu.payment.completed", STATUS.SUCCESS, {
-                transaction: result,
-                amount: amount,
-                address: addrOrLnurl,
+              sendResponse({
+                originalEvent: event,
+                action: "cashu.dialog.opened",
+                status: STATUS.SUCCESS,
+                payload: {
+                  message: "Token dialog is open",
+                  token: event.data.params.token,
+                  status: "ready_for_claim",
+                },
               });
-            } catch (error) {
-              sendResponse(event, "cashu.payment.failed", STATUS.ERROR, null, {
-                message: error.message,
-                code: "PAYMENT_ERROR",
-              });
-            }
-            break;
+              break;
 
-          case "claimToken":
-            try {
+            case "claimToken":
               const { useReceiveTokensStore } = await import(
                 "src/stores/receiveTokensStore"
               );
@@ -93,53 +80,58 @@ export default function () {
               receiveTokensStore.receiveData.tokensBase64 =
                 event.data.params.token;
               receiveTokensStore.showReceiveTokens = true;
-
-              sendResponse(event, "cashu.dialog.opened", STATUS.SUCCESS, {
-                message: "Token dialog is open",
-                token: event.data.params.token,
-                status: "ready_for_claim",
+              sendResponse({
+                originalEvent: event,
+                action: "cashu.dialog.opened",
+                status: STATUS.SUCCESS,
+                payload: {
+                  message: "Token dialog is open",
+                  token: event.data.params.token,
+                  status: "ready_for_claim",
+                },
               });
-            } catch (error) {
-              sendResponse(event, "cashu.dialog.error", STATUS.ERROR, null, {
-                message: error.message,
-                code: "DIALOG_ERROR",
+              break;
+
+            // New action for checking wallet status
+            case "getWalletStatus":
+              sendResponse({
+                originalEvent: event,
+                action: "cashu.wallet.status",
+                status: STATUS.SUCCESS,
+                payload: {
+                  balance: walletStore.balance,
+                  connected: walletStore.isConnected,
+                  mints: walletStore.mints,
+                },
               });
-            }
-            break;
+              break;
 
-          // New action for checking wallet status
-          case "getWalletStatus":
-            try {
-              const { useWalletStore } = await import("src/stores/wallet");
-              const walletStore = useWalletStore();
-
-              sendResponse(event, "cashu.wallet.status", STATUS.SUCCESS, {
-                balance: walletStore.balance,
-                connected: walletStore.isConnected,
-                mints: walletStore.activeMints,
+            default:
+              sendResponse({
+                originalEvent: event,
+                action: "cashu.error.unsupported",
+                status: STATUS.ERROR,
+                error: {
+                  message: `Unsupported action type: ${event.data.type}`,
+                  code: "UNSUPPORTED_ACTION",
+                },
               });
-            } catch (error) {
-              sendResponse(
-                event,
-                "cashu.wallet.error",
-                STATUS.ERROR,
-                null,
-                error
-              );
-            }
-            break;
-
-          default:
-            sendResponse(event, "cashu.error.unsupported", STATUS.ERROR, null, {
-              message: `Unsupported action type: ${event.data.type}`,
-              code: "UNSUPPORTED_ACTION",
-            });
+          }
+        } catch (error) {
+          sendResponse({
+            originalEvent: event,
+            action: "cashu.error",
+            status: STATUS.ERROR,
+            error: {
+              message: error.message,
+              code: "PAYMENT_ERROR",
+            },
+          });
         }
         break;
     }
   });
 
-  // Optional: Send ready signal when extension loads
   window.parent.postMessage(
     {
       ext: "cashu",
