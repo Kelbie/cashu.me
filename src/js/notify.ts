@@ -24,33 +24,13 @@ async function notifyApiError(
         {
           icon: "close",
           color: "white",
-          handler: () => {},
+          handler: () => { },
         },
       ],
     });
   } catch (e) {
     // skip
   }
-
-  // try {
-  //   const payload = {
-  //     level: "warning",
-  //     message: error.message,
-  //     caption: caption ?? undefined,
-  //     position,
-  //   };
-  //   window.parent?.postMessage(
-  //     {
-  //       ext: "cashu",
-  //       type: "frontendEvent",
-  //       event: "notify",
-  //       message: payload.message,
-  //       payload,
-  //       id: Date.now(),
-  //     },
-  //     "*"
-  //   );
-  // } catch (_) {}
 }
 
 async function notifySuccess(
@@ -67,18 +47,10 @@ async function notifySuccess(
       {
         icon: "close",
         color: "white",
-        handler: () => {},
+        handler: () => { },
       },
     ],
   });
-
-  // try {
-  //   const payload = { level: "success", message, position };
-  //   window.parent?.postMessage(
-  //     { ext: "cashu", type: "frontendEvent", event: "notify", message, payload, id: Date.now() },
-  //     "*"
-  //   );
-  // } catch (_) {}
 }
 
 async function notifyError(message: string, caption?: string) {
@@ -92,18 +64,10 @@ async function notifyError(message: string, caption?: string) {
       {
         icon: "close",
         color: "white",
-        handler: () => {},
+        handler: () => { },
       },
     ],
   });
-
-  try {
-    const payload = { level: "error", message, caption };
-    window.parent?.postMessage(
-      { ext: "cashu", type: "frontendEvent", event: "notify", message, payload, id: Date.now() },
-      "*"
-    );
-  } catch (_) {}
 }
 
 async function notifyWarning(
@@ -122,18 +86,10 @@ async function notifyWarning(
       {
         icon: "close",
         color: "black",
-        handler: () => {},
+        handler: () => { },
       },
     ],
   });
-
-  try {
-    const payload = { level: "warning", message, caption };
-    window.parent?.postMessage(
-      { ext: "cashu", type: "frontendEvent", event: "notify", message, payload, id: Date.now() },
-      "*"
-    );
-  } catch (_) {}
 }
 
 async function notify(
@@ -151,18 +107,10 @@ async function notify(
       {
         icon: "close",
         color: "white",
-        handler: () => {},
+        handler: () => { },
       },
     ],
   });
-
-  try {
-    const payload = { level: "info", message, position };
-    window.parent?.postMessage(
-      { ext: "cashu", type: "frontendEvent", event: "notify", message, payload, id: Date.now() },
-      "*"
-    );
-  } catch (_) {}
 }
 
 export { notifyApiError, notifySuccess, notifyError, notifyWarning, notify };
