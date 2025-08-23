@@ -24,7 +24,7 @@ async function notifyApiError(
         {
           icon: "close",
           color: "white",
-          handler: () => { },
+          handler: () => {},
         },
       ],
     });
@@ -47,7 +47,7 @@ async function notifySuccess(
       {
         icon: "close",
         color: "white",
-        handler: () => { },
+        handler: () => {},
       },
     ],
   });
@@ -64,7 +64,7 @@ async function notifyError(message: string, caption?: string) {
       {
         icon: "close",
         color: "white",
-        handler: () => { },
+        handler: () => {},
       },
     ],
   });
@@ -86,7 +86,7 @@ async function notifyWarning(
       {
         icon: "close",
         color: "black",
-        handler: () => { },
+        handler: () => {},
       },
     ],
   });
@@ -107,7 +107,7 @@ async function notify(
       {
         icon: "close",
         color: "white",
-        handler: () => { },
+        handler: () => {},
       },
     ],
   });

@@ -1467,7 +1467,11 @@ export const useWalletStore = defineStore("wallet", {
       const uiStore = useUiStore();
       uiStore.closeDialogs();
     },
-    lnurlPayFirst: async function (address: string, predefinedAmount?: number, predefinedComment?: string) {
+    lnurlPayFirst: async function (
+      address: string,
+      predefinedAmount?: number,
+      predefinedComment?: string
+    ) {
       var host;
       var data;
       if (address.split("@").length == 2) {
